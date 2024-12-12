@@ -6,8 +6,8 @@ import os
 from werkzeug.utils import secure_filename
 # Configuración de Flask
 app = Flask(__name__)
-CORS(app)
-
+# Configurar CORS para permitir todos los orígenes y métodos
+CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE"], "allow_headers": "*"}})
 # Configuración de Firebase
 DATABASE_URL="https://esp32basico-default-rtdb.firebaseio.com"
 ESTUDIANTES_URL = "https://esp32basico-default-rtdb.firebaseio.com/Estudiantes.json"  # URL de la rama Estudiantes
