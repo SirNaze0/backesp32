@@ -60,7 +60,13 @@ def upload_estudiantes():
                     "Android_id": 0,  # Valor por defecto
                     "Nombre": nombre
                 }
-
+            # Eliminar los datos existente en la tabla EstudiantesConAsistencia
+            delete2_response = requests.delete(ASISTENCIA_URL)
+            if delete2_response.status_code==200 or delete2_response.status_code==204:
+                print('TODO BIEN')
+            else:
+                return jsonify({"success":False, "message": f"Error al eliminar los datos existentes en Firebase: {delete2_response.status_code}"}), delete2_response.status_code
+            
             # Eliminar los datos existentes en la tabla Estudiantes
             delete_response = requests.delete(ESTUDIANTES_URL)
 
@@ -141,6 +147,49 @@ def get_estudiantes_con_asistencia():
             return jsonify({
                 "success": False,
                 "message": f"Error al obtener datos: {response.status_code}"
+            }), response.status_code
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Error inesperado: {str(e)}"
+        }), 500
+@app.route('/add_estudiante', methods=['POST'])
+def add_estudiante():
+    """
+    Endpoint para añadir un nuevo estudiante a Firebase.
+    """
+    try:
+        # Leer el JSON recibido en la solicitud
+        data = request.get_json()
+        
+        # Validar que se envíen los campos necesarios
+        if 'codigo_estudiante' not in data or 'nombre' not in data:
+            return jsonify({
+                "success": False,
+                "message": "Faltan datos obligatorios: 'codigo_estudiante' y 'nombre'."
+            }), 400
+        
+        # Construir el objeto basado en la estructura de la tabla
+        nuevo_estudiante = {
+            data['codigo_estudiante']: {
+                "Android_id": 0,  # Se define como un valor entero
+                "Nombre": data['nombre'],
+                "fechas": []  # Lista vacía por defecto
+            }
+        }
+        
+        # Enviar la solicitud PATCH a Firebase
+        response = requests.patch(ESTUDIANTES_URL, json=nuevo_estudiante)  # Usamos PATCH para actualizar con la nueva clave
+
+        if response.status_code in (200, 204):
+            return jsonify({
+                "success": True,
+                "message": "Estudiante añadido correctamente."
+            }), 201
+        else:
+            return jsonify({
+                "success": False,
+                "message": f"Error al añadir estudiante: {response.status_code}, {response.text}"
             }), response.status_code
     except Exception as e:
         return jsonify({
