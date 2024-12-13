@@ -196,6 +196,63 @@ def add_estudiante():
             "success": False,
             "message": f"Error inesperado: {str(e)}"
         }), 500
+@app.route('/delete_estudiante', methods=['DELETE'])
+def delete_estudiante():
+    """
+    Endpoint para eliminar un estudiante de la tabla Estudiantes en Firebase.
+    El front envía el código del estudiante como JSON.
+    """
+    try:
+        # Leer el JSON recibido en la solicitud
+        data = request.get_json()
+
+        # Validar que se envíe el campo obligatorio
+        if 'codigo_estudiante' not in data:
+            return jsonify({
+                "success": False,
+                "message": "Falta el campo obligatorio: 'codigo_estudiante'."
+            }), 400
+
+        # Obtener el código del estudiante
+        codigo_estudiante = str(data['codigo_estudiante'])
+
+        # Obtener todos los estudiantes existentes desde Firebase
+        response = requests.get(ESTUDIANTES_URL)
+        if response.status_code != 200:
+            return jsonify({
+                "success": False,
+                "message": f"Error al obtener estudiantes: {response.status_code}, {response.text}"
+            }), response.status_code
+
+        estudiantes = response.json()
+
+        # Verificar si el estudiante existe
+        if codigo_estudiante not in estudiantes:
+            return jsonify({
+                "success": False,
+                "message": f"El estudiante con código {codigo_estudiante} no existe."
+            }), 404
+
+        # Eliminar el estudiante de Firebase
+        delete_url = f"{ESTUDIANTES_URL[:-5]}/{codigo_estudiante}.json"
+        delete_response = requests.delete(delete_url)
+
+        if delete_response.status_code in (200, 204):
+            return jsonify({
+                "success": True,
+                "message": f"Estudiante con código {codigo_estudiante} eliminado correctamente."
+            }), 200
+        else:
+            return jsonify({
+                "success": False,
+                "message": f"Error al eliminar el estudiante: {delete_response.status_code}, {delete_response.text}"
+            }), delete_response.status_code
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Error inesperado: {str(e)}"
+        }), 500
 
 # Este bloque se coloca al final
 if __name__ == '__main__':
